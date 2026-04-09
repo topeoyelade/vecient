@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vecient — 5-Year Vehicle Cost Analyser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --ink:#0d0d0b;
+  --ink2:#3a3a36;
+  --ink3:#7a7a72;
+  --ink4:#b0b0a8;
+  --paper:#f7f6f2;
+  --paper2:#eeecea;
+  --paper3:#e4e2dc;
+  --white:#ffffff;
+  --accent:#c8401a;
+  --accent2:#e8602e;
+  --accent-pale:#fdf0eb;
+  --green:#1a6644;
+  --green-pale:#e8f4ee;
+  --blue:#1a4580;
+  --blue-pale:#e8eef8;
+  --border:rgba(13,13,11,0.1);
+  --border2:rgba(13,13,11,0.18);
+  --shadow:0 2px 16px rgba(13,13,11,0.08);
+  --shadow-lg:0 8px 40px rgba(13,13,11,0.12);
+  --r:10px;
+  --r-lg:16px;
+}
+
+body{
+  font-family:'Outfit',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* ── Header ── */
+header{
+  background:var(--ink);
+  color:var(--white);
+  padding:1.25rem 2rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.logo{
+  font-family:'DM Serif Display',serif;
+  font-size:1.6rem;
+  letter-spacing:-0.02em;
+  color:var(--white);
+}
+.logo em{color:var(--accent2);font-style:normal;}
+.tagline{font-size:12px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;letter-spacing:0.05em;}
+
+/* ── Layout ── */
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+.hero{
+  padding:2.5rem 0 2rem;
+  border-bottom:1px solid var(--border);
+  margin-bottom:2rem;
+}
+.hero h1{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(1.8rem,4vw,2.8rem);
+  line-height:1.15;
+  letter-spacing:-0.03em;
+  margin-bottom:0.5rem;
+}
+.hero p{color:var(--ink3);font-size:15px;max-width:520px;}
+
+/* ── Shared section chrome ── */
+.section-label{
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink4);
+  margin-bottom:1rem;
+}
+
+/* ── Vehicle cards ── */
+.vehicles{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1.25rem;
+  margin-bottom:2rem;
+}
+@media(max-width:680px){.vehicles{grid-template-columns:1fr;}}
+
+.vehicle-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:1.5rem;
+  box-shadow:var(--shadow);
+  position:relative;
+  transition:box-shadow 0.2s;
+}
+.vehicle-card:hover{box-shadow:var(--shadow-lg);}
+.vehicle-card.card-a{border-top:3px solid var(--accent);}
+.vehicle-card.card-b{border-top:3px solid var(--blue);}
+
+.card-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:1.25rem;
+}
+.card-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+.card-a .card-dot{background:var(--accent);}
+.card-b .card-dot{background:var(--blue);}
+
+.card-name{
+  background:transparent;
+  border:none;
+  border-bottom:1.5px solid var(--border2);
+  font-family:'Outfit',sans-serif;
+  font-size:16px;
+  font-weight:600;
+  color:var(--ink);
+  width:100%;
+  padding:2px 0 4px;
+  outline:none;
+  transition:border-color 0.15s;
+}
+.card-name:focus{border-color:var(--accent);}
+
+.field-group{margin-bottom:1rem;}
+.field-label{
+  font-size:12px;
+  color:var(--ink3);
+  margin-bottom:4px;
+  display:flex;
+  justify-content:space-between;
+}
+.field-label strong{
+  color:var(--ink);
+  font-weight:500;
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+}
+
+input[type="range"]{
+  width:100%;
+  height:4px;
+  appearance:none;
+  background:var(--paper3);
+  border-radius:2px;
+  outline:none;
+  cursor:pointer;
+}
+input[type="range"]::-webkit-slider-thumb{
+  appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--ink);cursor:pointer;
+  transition:transform 0.1s;
+}
+input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.2);}
+input[type="range"]::-moz-range-thumb{
+  width:16px;height:16px;border:none;border-radius:50%;
+  background:var(--ink);cursor:pointer;
+}
+
+.fuel-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
+.ftab{
+  padding:4px 12px;border-radius:20px;
+  border:1px solid var(--border2);
+  background:transparent;cursor:pointer;
+  font-size:12px;color:var(--ink3);
+  font-family:'Outfit',sans-serif;
+  transition:all 0.12s;
+}
+.ftab:hover{background:var(--paper2);}
+.ftab.active{
+  background:var(--ink);color:var(--white);border-color:transparent;
+}
+
+.num-input{
+  display:flex;align-items:center;gap:8px;
+}
+.num-input input[type="number"]{
+  width:100%;
+  padding:6px 10px;
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+  color:var(--ink);
+  background:var(--paper);
+  outline:none;
+  transition:border-color 0.15s;
+}
+.num-input input[type="number"]:focus{border-color:var(--ink);}
+.num-prefix{font-size:13px;color:var(--ink3);white-space:nowrap;}
+
+/* ── Global controls ── */
+.global-controls{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:1.5rem;
+  margin-bottom:2rem;
+  box-shadow:var(--shadow);
+}
+.global-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:1.25rem;
+}
+
+/* ── Results ── */
+.results-section{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  margin-bottom:2rem;
+}
+.results-header{
+  background:var(--ink);
+  color:var(--white);
+  padding:1.25rem 1.5rem;
+  display:flex;align-items:baseline;gap:12px;
+}
+.results-header h2{
+  font-family:'DM Serif Display',serif;
+  font-size:1.3rem;letter-spacing:-0.02em;
+}
+.results-header span{font-size:12px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;}
+
+.results-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+@media(max-width:600px){.results-grid{grid-template-columns:1fr;}}
+
+.result-col{padding:1.5rem;}
+.result-col.col-a{border-right:1px solid var(--border);}
+.result-col.col-b{}
+.col-a .result-name{color:var(--accent);}
+.col-b .result-name{color:var(--blue);}
+.result-name{font-size:13px;font-weight:600;margin-bottom:1rem;letter-spacing:0.02em;}
+
+.stat-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:7px 0;
+  border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.stat-row:last-child{border-bottom:none;}
+.stat-row .label{color:var(--ink3);}
+.stat-row .val{
+  font-family:'DM Mono',monospace;
+  font-weight:500;
+  font-size:13px;
+  color:var(--ink);
+}
+.stat-row.total-row{
+  padding:10px 0 4px;
+  margin-top:4px;
+}
+.stat-row.total-row .label{font-weight:600;color:var(--ink);font-size:14px;}
+.stat-row.total-row .val{font-size:16px;font-weight:600;}
+
+/* ── Verdict banner ── */
+.verdict{
+  padding:1.25rem 1.5rem;
+  border-top:1px solid var(--border);
+  background:var(--paper);
+  display:flex;align-items:center;gap:12px;
+  flex-wrap:wrap;
+}
+.verdict-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--green-pale);
+  color:var(--green);
+  border-radius:20px;
+  padding:5px 14px;
+  font-size:12px;font-weight:600;
+  font-family:'DM Mono',monospace;
+  white-space:nowrap;
+}
+.verdict-badge.neutral{background:var(--paper2);color:var(--ink3);}
+.verdict-text{font-size:13px;color:var(--ink2);}
+.verdict-saving{font-weight:600;color:var(--green);}
+
+/* ── Bar comparison ── */
+.bar-section{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:1.5rem;
+  box-shadow:var(--shadow);
+  margin-bottom:2rem;
+}
+.bar-chart{display:flex;flex-direction:column;gap:10px;margin-top:1rem;}
+.bar-row{display:grid;grid-template-columns:130px 1fr 90px;align-items:center;gap:12px;font-size:13px;}
+.bar-label{color:var(--ink3);text-align:right;}
+.bar-track{background:var(--paper2);border-radius:4px;height:20px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.4s cubic-bezier(0.4,0,0.2,1);}
+.bar-fill.a{background:var(--accent);}
+.bar-fill.b{background:var(--blue);}
+.bar-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--ink);}
+
+/* ── Year breakdown table ── */
+.year-table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  text-align:left;padding:8px 12px;
+  background:var(--paper2);
+  color:var(--ink3);
+  font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:0.06em;
+  font-weight:500;
+  border-bottom:1px solid var(--border);
+}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--ink2);}
+td.mono{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);}
+tr:last-child td{border-bottom:none;}
+tr.winner-a td{background:rgba(200,64,26,0.04);}
+tr.winner-b td{background:rgba(26,69,128,0.04);}
+.pill{
+  display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
+  font-family:'DM Mono',monospace;
+}
+.pill-a{background:var(--accent-pale);color:var(--accent);}
+.pill-b{background:var(--blue-pale);color:var(--blue);}
+
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.vehicle-card,.global-controls,.results-section,.bar-section{animation:fadeUp 0.4s ease both;}
+.vehicle-card:nth-child(2){animation-delay:0.06s;}
+.results-section{animation-delay:0.12s;}
+.bar-section{animation-delay:0.18s;}
+
+footer{text-align:center;padding:2rem;font-size:12px;color:var(--ink4);font-family:'DM Mono',monospace;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vec<em>ient</em></div>
+  <div class="tagline">5-YEAR VEHICLE COST ANALYSER</div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Compare the true cost<br><em style="font-style:italic;color:var(--ink3)">of owning a vehicle</em></h1>
+    <p>Purchase price, hire purchase interest, fuel over 5 years, and estimated resale — side by side.</p>
+  </div>
+
+  <!-- Global controls -->
+  <p class="section-label">Global Settings</p>
+  <div class="global-controls">
+    <div class="global-grid">
+      <div class="field-group">
+        <div class="field-label">Annual mileage <strong id="gMilesVal">10,000 mi</strong></div>
+        <input type="range" id="gMiles" min="1000" max="40000" step="500" value="10000">
+      </div>
+      <div class="field-group">
+        <div class="field-label">HP deposit % <strong id="gDepositVal">10%</strong></div>
+        <input type="range" id="gDeposit" min="0" max="50" step="1" value="10">
+      </div>
+      <div class="field-group">
+        <div class="field-label">HP interest rate (APR) <strong id="gAprVal">9.9%</strong></div>
+        <input type="range" id="gApr" min="1" max="30" step="0.1" value="9.9">
+      </div>
+    </div>
+  </div>
+
+  <!-- Vehicle cards -->
+  <p class="section-label">Vehicles</p>
+  <div class="vehicles">
+
+    <!-- Card A -->
+    <div class="vehicle-card card-a">
+      <div class="card-title">
+        <div class="card-dot"></div>
+        <input class="card-name" type="text" id="nameA" value="Vehicle A" placeholder="Vehicle name">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Purchase price <strong id="priceAval">£20,000</strong></div>
+        <input type="range" id="priceA" min="1000" max="100000" step="500" value="20000">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">5-year resale value <strong id="resaleAval">£8,000</strong></div>
+        <input type="range" id="resaleA" min="0" max="80000" step="500" value="8000">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Average MPG <strong id="mpgAval">45 mpg</strong></div>
+        <input type="range" id="mpgA" min="10" max="300" step="1" value="45">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel type</div>
+        <div class="fuel-tabs" id="fuelTabsA">
+          <button class="ftab active" data-price="1.42">Petrol</button>
+          <button class="ftab" data-price="1.48">Diesel</button>
+          <button class="ftab" data-price="0.75">LPG</button>
+          <button class="ftab" data-price="0.28" data-electric="1">Electric</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel price <strong id="fpAval">£1.42/L</strong></div>
+        <input type="range" id="fpA" min="0.10" max="3.00" step="0.01" value="1.42">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Annual service / insurance / tax <strong id="fixedAval">£1,500</strong></div>
+        <input type="range" id="fixedA" min="0" max="8000" step="100" value="1500">
+      </div>
+    </div>
+
+    <!-- Card B -->
+    <div class="vehicle-card card-b">
+      <div class="card-title">
+        <div class="card-dot"></div>
+        <input class="card-name" type="text" id="nameB" value="Vehicle B" placeholder="Vehicle name">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Purchase price <strong id="priceBval">£28,000</strong></div>
+        <input type="range" id="priceB" min="1000" max="100000" step="500" value="28000">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">5-year resale value <strong id="resaleBval">£14,000</strong></div>
+        <input type="range" id="resaleB" min="0" max="80000" step="500" value="14000">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Average MPG <strong id="mpgBval">55 mpg</strong></div>
+        <input type="range" id="mpgB" min="10" max="300" step="1" value="55">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel type</div>
+        <div class="fuel-tabs" id="fuelTabsB">
+          <button class="ftab" data-price="1.42">Petrol</button>
+          <button class="ftab active" data-price="1.48">Diesel</button>
+          <button class="ftab" data-price="0.75">LPG</button>
+          <button class="ftab" data-price="0.28" data-electric="1">Electric</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel price <strong id="fpBval">£1.48/L</strong></div>
+        <input type="range" id="fpB" min="0.10" max="3.00" step="0.01" value="1.48">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Annual service / insurance / tax <strong id="fixedBval">£1,800</strong></div>
+        <input type="range" id="fixedB" min="0" max="8000" step="100" value="1800">
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <p class="section-label">5-Year Cost Breakdown</p>
+  <div class="results-section">
+    <div class="results-header">
+      <h2>Total Cost of Ownership</h2>
+      <span>OVER 5 YEARS</span>
+    </div>
+    <div class="results-grid">
+      <div class="result-col col-a">
+        <div class="result-name" id="labelA">Vehicle A</div>
+        <div class="stat-row"><span class="label">Purchase price</span><span class="val" id="rA_price">—</span></div>
+        <div class="stat-row"><span class="label">HP interest (5yr)</span><span class="val" id="rA_interest">—</span></div>
+        <div class="stat-row"><span class="label">Fuel (5yr total)</span><span class="val" id="rA_fuel">—</span></div>
+        <div class="stat-row"><span class="label">Service/ins/tax (5yr)</span><span class="val" id="rA_fixed">—</span></div>
+        <div class="stat-row"><span class="label">Resale value</span><span class="val" id="rA_resale">—</span></div>
+        <div class="stat-row total-row"><span class="label">Net 5-year cost</span><span class="val" id="rA_total">—</span></div>
+        <div style="height:1rem;"></div>
+        <div class="stat-row"><span class="label">Per year</span><span class="val" id="rA_yr">—</span></div>
+        <div class="stat-row"><span class="label">Per month</span><span class="val" id="rA_mo">—</span></div>
+        <div class="stat-row"><span class="label">Per week</span><span class="val" id="rA_wk">—</span></div>
+        <div class="stat-row"><span class="label">Per day</span><span class="val" id="rA_dy">—</span></div>
+        <div style="height:0.5rem;"></div>
+        <div class="stat-row"><span class="label">Fuel cost / year</span><span class="val" id="rA_fuelyr">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / month</span><span class="val" id="rA_fuelmo">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / week</span><span class="val" id="rA_fuelwk">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / day</span><span class="val" id="rA_fueldy">—</span></div>
+      </div>
+      <div class="result-col col-b">
+        <div class="result-name" id="labelB">Vehicle B</div>
+        <div class="stat-row"><span class="label">Purchase price</span><span class="val" id="rB_price">—</span></div>
+        <div class="stat-row"><span class="label">HP interest (5yr)</span><span class="val" id="rB_interest">—</span></div>
+        <div class="stat-row"><span class="label">Fuel (5yr total)</span><span class="val" id="rB_fuel">—</span></div>
+        <div class="stat-row"><span class="label">Service/ins/tax (5yr)</span><span class="val" id="rB_fixed">—</span></div>
+        <div class="stat-row"><span class="label">Resale value</span><span class="val" id="rB_resale">—</span></div>
+        <div class="stat-row total-row"><span class="label">Net 5-year cost</span><span class="val" id="rB_total">—</span></div>
+        <div style="height:1rem;"></div>
+        <div class="stat-row"><span class="label">Per year</span><span class="val" id="rB_yr">—</span></div>
+        <div class="stat-row"><span class="label">Per month</span><span class="val" id="rB_mo">—</span></div>
+        <div class="stat-row"><span class="label">Per week</span><span class="val" id="rB_wk">—</span></div>
+        <div class="stat-row"><span class="label">Per day</span><span class="val" id="rB_dy">—</span></div>
+        <div style="height:0.5rem;"></div>
+        <div class="stat-row"><span class="label">Fuel cost / year</span><span class="val" id="rB_fuelyr">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / month</span><span class="val" id="rB_fuelmo">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / week</span><span class="val" id="rB_fuelwk">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / day</span><span class="val" id="rB_fueldy">—</span></div>
+      </div>
+    </div>
+    <div class="verdict" id="verdictBanner">
+      <div class="verdict-badge neutral" id="verdictBadge">–</div>
+      <div class="verdict-text" id="verdictText">Adjust the values above to compare.</div>
+    </div>
+  </div>
+
+  <!-- Bar chart -->
+  <p class="section-label">Cost Comparison</p>
+  <div class="bar-section">
+    <div class="bar-chart" id="barChart"></div>
+  </div>
+
+  <!-- Year by year table -->
+  <p class="section-label">Year-by-Year Fuel Cost</p>
+  <div class="results-section">
+    <div class="year-table-wrap">
+      <table id="yearTable">
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th>Miles</th>
+            <th id="thA">Vehicle A fuel</th>
+            <th id="thB">Vehicle B fuel</th>
+            <th>Cheaper</th>
+            <th>Saving</th>
+          </tr>
+        </thead>
+        <tbody id="yearBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+<footer>Vecient — for illustration purposes. HP figures are estimates. Fuel prices are UK averages.</footer>
+
+<script>
+const L_PER_GAL = 4.54609;
+
+const state = {
+  miles: 10000,
+  deposit: 10,
+  apr: 9.9,
+  a: { name:'Vehicle A', price:20000, resale:8000, mpg:45, fp:1.42, fixed:1500, electric:false },
+  b: { name:'Vehicle B', price:28000, resale:14000, mpg:55, fp:1.48, fixed:1800, electric:false }
+};
+
+function fmt(n){ return '£'+Math.round(n).toLocaleString('en-GB'); }
+function fmtD(n){ return '£'+n.toFixed(2); }
+
+function calcFuelPerYear(v, miles){
+  if(v.electric){
+    const mpge = v.mpg;
+    const milesPerKwh = mpge / 3.41;
+    return (miles / milesPerKwh) * v.fp;
+  }
+  return (miles / v.mpg) * L_PER_GAL * v.fp;
+}
+
+function calcHP(price, depositPct, apr){
+  const deposit = price * depositPct / 100;
+  const loan = price - deposit;
+  const monthlyRate = apr / 100 / 12;
+  const n = 60;
+  let monthlyPayment;
+  if(monthlyRate === 0){ monthlyPayment = loan / n; }
+  else { monthlyPayment = loan * monthlyRate * Math.pow(1+monthlyRate,n) / (Math.pow(1+monthlyRate,n)-1); }
+  const totalRepaid = monthlyPayment * n + deposit;
+  const totalInterest = totalRepaid - price;
+  return { totalInterest, monthlyPayment, deposit, totalRepaid };
+}
+
+function calc(){
+  const { miles, deposit, apr, a, b } = state;
+  const fuelA = calcFuelPerYear(a, miles) * 5;
+  const fuelB = calcFuelPerYear(b, miles) * 5;
+  const hpA = calcHP(a.price, deposit, apr);
+  const hpB = calcHP(b.price, deposit, apr);
+  const fixedA5 = a.fixed * 5;
+  const fixedB5 = b.fixed * 5;
+
+  const totalA = a.price + hpA.totalInterest + fuelA + fixedA5 - a.resale;
+  const totalB = b.price + hpB.totalInterest + fuelB + fixedB5 - b.resale;
+
+  // Stats
+  function setStats(prefix, v, hp, fuel5, fixed5, total){
+    document.getElementById(prefix+'_price').textContent = fmt(v.price);
+    document.getElementById(prefix+'_interest').textContent = fmt(hp.totalInterest);
+    document.getElementById(prefix+'_fuel').textContent = fmt(fuel5);
+    document.getElementById(prefix+'_fixed').textContent = fmt(fixed5);
+    document.getElementById(prefix+'_resale').textContent = '−'+fmt(v.resale);
+    document.getElementById(prefix+'_total').textContent = fmt(total);
+    document.getElementById(prefix+'_yr').textContent = fmt(total/5);
+    document.getElementById(prefix+'_mo').textContent = fmtD(total/60);
+    document.getElementById(prefix+'_wk').textContent = fmtD(total/260);
+    document.getElementById(prefix+'_dy').textContent = fmtD(total/1825);
+    const fuelAnn = fuel5/5;
+    document.getElementById(prefix+'_fuelyr').textContent = fmt(fuelAnn);
+    document.getElementById(prefix+'_fuelmo').textContent = fmtD(fuelAnn/12);
+    document.getElementById(prefix+'_fuelwk').textContent = fmtD(fuelAnn/52);
+    document.getElementById(prefix+'_fueldy').textContent = fmtD(fuelAnn/365);
+  }
+
+  setStats('rA', a, hpA, fuelA, fixedA5, totalA);
+  setStats('rB', b, hpB, fuelB, fixedB5, totalB);
+  document.getElementById('labelA').textContent = a.name;
+  document.getElementById('labelB').textContent = b.name;
+
+  // Verdict
+  const badge = document.getElementById('verdictBadge');
+  const txt = document.getElementById('verdictText');
+  const diff = Math.abs(totalA - totalB);
+  if(diff < 100){
+    badge.className = 'verdict-badge neutral';
+    badge.textContent = 'NEAR TIE';
+    txt.innerHTML = 'Both vehicles cost almost the same over 5 years.';
+  } else if(totalA < totalB){
+    badge.className = 'verdict-badge';
+    badge.textContent = a.name + ' WINS';
+    txt.innerHTML = `<span class="verdict-saving">${fmt(diff)} cheaper</span> than ${b.name} over 5 years — ${fmtD(diff/60)}/month less.`;
+  } else {
+    badge.className = 'verdict-badge';
+    badge.style.background = 'var(--blue-pale)';
+    badge.style.color = 'var(--blue)';
+    badge.textContent = b.name + ' WINS';
+    txt.innerHTML = `<span class="verdict-saving" style="color:var(--blue)">${fmt(diff)} cheaper</span> than ${a.name} over 5 years — ${fmtD(diff/60)}/month less.`;
+  }
+
+  // Bar chart
+  const bars = [
+    { label:'Purchase price', va:a.price, vb:b.price },
+    { label:'HP interest', va:hpA.totalInterest, vb:hpB.totalInterest },
+    { label:'Fuel (5yr)', va:fuelA, vb:fuelB },
+    { label:'Running costs', va:fixedA5, vb:fixedB5 },
+    { label:'Resale (saved)', va:a.resale, vb:b.resale },
+    { label:'Net total', va:totalA, vb:totalB },
+  ];
+  const maxVal = Math.max(...bars.map(b=>Math.max(b.va,b.vb)));
+  const bc = document.getElementById('barChart');
+  bc.innerHTML = bars.map(row=>{
+    const pA = (row.va/maxVal*100).toFixed(1);
+    const pB = (row.vb/maxVal*100).toFixed(1);
+    return `
+      <div style="margin-bottom:6px;">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:4px;font-family:'DM Mono',monospace;letter-spacing:0.04em;">${row.label.toUpperCase()}</div>
+        <div class="bar-row">
+          <div style="font-size:12px;color:var(--accent);font-weight:500;text-align:right;font-family:'DM Mono',monospace;width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.name}</div>
+          <div class="bar-track"><div class="bar-fill a" style="width:${pA}%"></div></div>
+          <div class="bar-val">${fmt(row.va)}</div>
+        </div>
+        <div class="bar-row">
+          <div style="font-size:12px;color:var(--blue);font-weight:500;text-align:right;font-family:'DM Mono',monospace;width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name}</div>
+          <div class="bar-track"><div class="bar-fill b" style="width:${pB}%"></div></div>
+          <div class="bar-val">${fmt(row.vb)}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Year table
+  document.getElementById('thA').textContent = a.name + ' fuel';
+  document.getElementById('thB').textContent = b.name + ' fuel';
+  const tbody = document.getElementById('yearBody');
+  let rows = '';
+  for(let yr=1;yr<=5;yr++){
+    const fa = calcFuelPerYear(a, miles);
+    const fb = calcFuelPerYear(b, miles);
+    const winA = fa < fb;
+    const save = Math.abs(fa-fb);
+    rows += `<tr class="${winA?'winner-a':'winner-b'}">
+      <td>Year ${yr}</td>
+      <td class="mono">${(miles*yr).toLocaleString()} mi</td>
+      <td class="mono">${fmt(fa*yr)}</td>
+      <td class="mono">${fmt(fb*yr)}</td>
+      <td><span class="pill ${winA?'pill-a':'pill-b'}">${winA?a.name:b.name}</span></td>
+      <td class="mono">${fmt(save*yr)}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+// Wire up global sliders
+function wire(id, key, display, fmt_fn, stateKey){
+  document.getElementById(id).addEventListener('input', e=>{
+    const v = parseFloat(e.target.value);
+    state[stateKey || key] = v;
+    document.getElementById(display).textContent = fmt_fn(v);
+    calc();
+  });
+}
+
+document.getElementById('gMiles').addEventListener('input', e=>{
+  state.miles = parseInt(e.target.value);
+  document.getElementById('gMilesVal').textContent = parseInt(e.target.value).toLocaleString()+' mi';
+  calc();
+});
+document.getElementById('gDeposit').addEventListener('input', e=>{
+  state.deposit = parseFloat(e.target.value);
+  document.getElementById('gDepositVal').textContent = e.target.value+'%';
+  calc();
+});
+document.getElementById('gApr').addEventListener('input', e=>{
+  state.apr = parseFloat(e.target.value);
+  document.getElementById('gAprVal').textContent = parseFloat(e.target.value).toFixed(1)+'%';
+  calc();
+});
+
+// Vehicle sliders
+function wireVehicle(suffix, stateKey){
+  const s = state[stateKey];
+
+  document.getElementById('name'+suffix).addEventListener('input', e=>{
+    s.name = e.target.value || ('Vehicle '+suffix);
+    calc();
+  });
+
+  ['price','resale','mpg','fp','fixed'].forEach(field=>{
+    document.getElementById(field+suffix).addEventListener('input', e=>{
+      const v = parseFloat(e.target.value);
+      s[field] = v;
+      const displayMap = {
+        price: ()=>fmt(v),
+        resale: ()=>fmt(v),
+        mpg: ()=>v+(s.electric?' MPGe':' mpg'),
+        fp: ()=>'£'+v.toFixed(2)+(s.electric?'/kWh':'/L'),
+        fixed: ()=>fmt(v)
+      };
+      document.getElementById(field+suffix+'val').textContent = displayMap[field]();
+      calc();
+    });
+  });
+
+  document.querySelectorAll('#fuelTabs'+suffix+' .ftab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#fuelTabs'+suffix+' .ftab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      s.electric = !!btn.dataset.electric;
+      s.fp = parseFloat(btn.dataset.price);
+      document.getElementById('fp'+suffix).value = s.fp;
+      document.getElementById('fp'+suffix+'val').textContent = '£'+s.fp.toFixed(2)+(s.electric?'/kWh':'/L');
+      const mpgSlider = document.getElementById('mpg'+suffix);
+      if(s.electric){ mpgSlider.max=300; if(s.mpg<50){s.mpg=100;mpgSlider.value=100;} }
+      else { mpgSlider.max=150; if(s.mpg>150){s.mpg=50;mpgSlider.value=50;} }
+      document.getElementById('mpg'+suffix+'val').textContent = s.mpg+(s.electric?' MPGe':' mpg');
+      calc();
+    });
+  });
+}
+
+wireVehicle('A','a');
+wireVehicle('B','b');
+
+calc();
+</script>
+</body>
+</html>
