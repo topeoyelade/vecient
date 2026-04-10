@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vecient — 5-Year Vehicle Cost Analyser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0d0d0b; --ink2:#3a3a36; --ink3:#7a7a72; --ink4:#b0b0a8;
+  --paper:#f7f6f2; --paper2:#eeecea; --paper3:#e4e2dc; --white:#ffffff;
+  --accent:#c8401a; --accent2:#e8602e; --accent-pale:#fdf0eb;
+  --green:#1a6644; --green-pale:#e8f4ee;
+  --blue:#1a4580; --blue-pale:#e8eef8;
+  --purple:#5b21b6; --purple-pale:#ede9fe;
+  --amber:#92400e; --amber-pale:#fffbeb;
+  --border:rgba(13,13,11,0.1); --border2:rgba(13,13,11,0.18);
+  --shadow:0 2px 16px rgba(13,13,11,0.08); --shadow-lg:0 8px 40px rgba(13,13,11,0.12);
+  --r:10px; --r-lg:16px;
+}
+body{font-family:'Outfit',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;}
+
+/* Header */
+header{background:var(--ink);color:var(--white);padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'DM Serif Display',serif;font-size:1.6rem;letter-spacing:-0.02em;color:var(--white);}
+.logo em{color:var(--accent2);font-style:normal;}
+.tagline{font-size:12px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;letter-spacing:0.05em;}
+
+/* Layout */
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+.hero{padding:2.5rem 0 2rem;border-bottom:1px solid var(--border);margin-bottom:2rem;}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.15;letter-spacing:-0.03em;margin-bottom:0.5rem;}
+.hero p{color:var(--ink3);font-size:15px;max-width:560px;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink4);margin-bottom:1rem;}
+
+/* Vehicle cards */
+.vehicles{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem;}
+@media(max-width:680px){.vehicles{grid-template-columns:1fr;}}
+.vehicle-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;box-shadow:var(--shadow);position:relative;transition:box-shadow 0.2s;}
+.vehicle-card:hover{box-shadow:var(--shadow-lg);}
+.vehicle-card.card-a{border-top:3px solid var(--accent);}
+.vehicle-card.card-b{border-top:3px solid var(--blue);}
+.card-title{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.card-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.card-a .card-dot{background:var(--accent);}
+.card-b .card-dot{background:var(--blue);}
+.card-name{background:transparent;border:none;border-bottom:1.5px solid var(--border2);font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;color:var(--ink);width:100%;padding:2px 0 4px;outline:none;transition:border-color 0.15s;}
+.card-name:focus{border-color:var(--accent);}
+
+/* DVLA lookup */
+.reg-lookup{margin-bottom:1.25rem;}
+.reg-input-row{display:flex;gap:8px;align-items:center;}
+.reg-input{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;padding:7px 12px;border:2px solid var(--border2);border-radius:var(--r);background:var(--paper);color:var(--ink);outline:none;width:130px;transition:border-color 0.15s;}
+.reg-input:focus{border-color:var(--ink);}
+.reg-btn{padding:7px 14px;background:var(--ink);color:var(--white);border:none;border-radius:var(--r);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.15s,opacity 0.15s;white-space:nowrap;}
+.reg-btn:hover{background:var(--ink2);}
+.reg-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.dvla-result{margin-top:10px;padding:10px 14px;border-radius:var(--r);font-size:12px;line-height:1.5;animation:fadeUp 0.3s ease both;}
+.dvla-result.success{background:var(--green-pale);border:1px solid rgba(26,102,68,0.2);}
+.dvla-result.error{background:var(--accent-pale);border:1px solid rgba(200,64,26,0.2);color:var(--accent);}
+.dvla-result.info{background:var(--blue-pale);border:1px solid rgba(26,69,128,0.2);color:var(--blue);}
+.dvla-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.dvla-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-family:'DM Mono',monospace;font-weight:500;background:var(--white);border:1px solid var(--border2);color:var(--ink2);}
+
+/* Fields */
+.field-group{margin-bottom:1rem;}
+.field-label{font-size:12px;color:var(--ink3);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+.field-label strong{color:var(--ink);font-weight:500;font-family:'DM Mono',monospace;font-size:13px;}
+input[type="range"]{width:100%;height:4px;appearance:none;background:var(--paper3);border-radius:2px;outline:none;cursor:pointer;}
+input[type="range"]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ink);cursor:pointer;transition:transform 0.1s;}
+input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.2);}
+input[type="range"]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:var(--ink);cursor:pointer;}
+
+/* Mileage number input */
+.mileage-input-wrap{display:flex;align-items:center;gap:8px;}
+.mileage-number{width:110px;padding:6px 10px;border:1px solid var(--border2);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);background:var(--paper);outline:none;transition:border-color 0.15s;}
+.mileage-number:focus{border-color:var(--ink);}
+.mileage-suffix{font-size:12px;color:var(--ink3);}
+.mileage-end-tag{font-size:11px;font-family:'DM Mono',monospace;color:var(--purple);background:var(--purple-pale);border-radius:20px;padding:2px 8px;white-space:nowrap;}
+
+/* Resale auto badge */
+.resale-auto-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-family:'DM Mono',monospace;
+  color:var(--green);background:var(--green-pale);
+  border-radius:20px;padding:1px 7px;cursor:default;
+}
+.resale-source-note{font-size:10px;color:var(--ink4);font-family:'DM Mono',monospace;margin-top:3px;}
+
+/* Market lookup button */
+.market-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 11px;
+  background:var(--amber-pale);
+  color:var(--amber);
+  border:1px solid rgba(146,64,14,0.2);
+  border-radius:20px;
+  font-size:11px;font-family:'DM Mono',monospace;font-weight:500;
+  cursor:pointer;transition:background 0.12s;white-space:nowrap;
+}
+.market-btn:hover{background:#fef3c7;}
+.market-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.market-spinner{width:10px;height:10px;border:1.5px solid rgba(146,64,14,0.3);border-top-color:var(--amber);border-radius:50%;animation:spin 0.6s linear infinite;display:none;}
+.market-btn.loading .market-spinner{display:block;}
+.market-btn.loading .market-btn-text{display:none;}
+
+/* Fuel tabs */
+.fuel-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
+.ftab{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:12px;color:var(--ink3);font-family:'Outfit',sans-serif;transition:all 0.12s;}
+.ftab:hover{background:var(--paper2);}
+.ftab.active{background:var(--ink);color:var(--white);border-color:transparent;}
+
+/* Global controls */
+.global-controls{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;margin-bottom:2rem;box-shadow:var(--shadow);}
+.global-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;}
+
+/* API notice */
+.api-notice{background:var(--purple-pale);border:1px solid rgba(91,33,182,0.2);border-radius:var(--r);padding:12px 16px;font-size:12px;color:var(--purple);margin-bottom:1.5rem;line-height:1.6;}
+.api-notice strong{font-weight:600;}
+.api-key-row{display:flex;gap:8px;margin-top:8px;align-items:center;}
+.dvla-proxy-input{flex:1;padding:6px 10px;border:1px solid rgba(91,33,182,0.3);border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);background:var(--white);outline:none;}
+.api-key-save{padding:6px 12px;background:var(--purple);color:var(--white);border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:500;}
+
+/* Results */
+.results-section{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);margin-bottom:2rem;}
+.results-header{background:var(--ink);color:var(--white);padding:1.25rem 1.5rem;display:flex;align-items:baseline;gap:12px;}
+.results-header h2{font-family:'DM Serif Display',serif;font-size:1.3rem;letter-spacing:-0.02em;}
+.results-header span{font-size:12px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;}
+@media(max-width:600px){.results-grid{grid-template-columns:1fr;}}
+.result-col{padding:1.5rem;}
+.result-col.col-a{border-right:1px solid var(--border);}
+.col-a .result-name{color:var(--accent);}
+.col-b .result-name{color:var(--blue);}
+.result-name{font-size:13px;font-weight:600;margin-bottom:1rem;letter-spacing:0.02em;}
+.stat-row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.stat-row:last-child{border-bottom:none;}
+.stat-row .label{color:var(--ink3);}
+.stat-row .val{font-family:'DM Mono',monospace;font-weight:500;font-size:13px;color:var(--ink);}
+.stat-row.total-row{padding:10px 0 4px;margin-top:4px;}
+.stat-row.total-row .label{font-weight:600;color:var(--ink);font-size:14px;}
+.stat-row.total-row .val{font-size:16px;font-weight:600;}
+
+/* Verdict */
+.verdict{padding:1.25rem 1.5rem;border-top:1px solid var(--border);background:var(--paper);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.verdict-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-pale);color:var(--green);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap;}
+.verdict-badge.neutral{background:var(--paper2);color:var(--ink3);}
+.verdict-text{font-size:13px;color:var(--ink2);}
+.verdict-saving{font-weight:600;color:var(--green);}
+
+/* Bar chart */
+.bar-section{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;box-shadow:var(--shadow);margin-bottom:2rem;}
+.bar-chart{display:flex;flex-direction:column;gap:10px;margin-top:1rem;}
+.bar-row{display:grid;grid-template-columns:130px 1fr 90px;align-items:center;gap:12px;font-size:13px;}
+.bar-track{background:var(--paper2);border-radius:4px;height:20px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.4s cubic-bezier(0.4,0,0.2,1);}
+.bar-fill.a{background:var(--accent);}
+.bar-fill.b{background:var(--blue);}
+.bar-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--ink);}
+
+/* Year table */
+.year-table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 12px;background:var(--paper2);color:var(--ink3);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;font-weight:500;border-bottom:1px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--ink2);}
+td.mono{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);}
+tr:last-child td{border-bottom:none;}
+tr.winner-a td{background:rgba(200,64,26,0.04);}
+tr.winner-b td{background:rgba(26,69,128,0.04);}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace;}
+.pill-a{background:var(--accent-pale);color:var(--accent);}
+.pill-b{background:var(--blue-pale);color:var(--blue);}
+
+/* Depreciation panel */
+.depr-panel{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);margin-bottom:2rem;}
+.depr-header{background:linear-gradient(135deg,#0d0d0b 0%,#1e1a2e 100%);color:var(--white);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.depr-header h2{font-family:'DM Serif Display',serif;font-size:1.3rem;letter-spacing:-0.02em;}
+.depr-header p{font-size:12px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;}
+.depr-analyse-btn{padding:8px 18px;background:var(--purple);color:var(--white);border:none;border-radius:var(--r);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.15s,opacity 0.15s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.depr-analyse-btn:hover{background:#6d28d9;}
+.depr-analyse-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.depr-body{padding:1.5rem;}
+.depr-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+@media(max-width:600px){.depr-cols{grid-template-columns:1fr;}}
+.depr-col-head{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:0.05em;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--border);}
+.depr-col-head.a{color:var(--accent);border-color:var(--accent);}
+.depr-col-head.b{color:var(--blue);border-color:var(--blue);}
+.depr-year-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.depr-year-row:last-child{border-bottom:none;}
+.depr-year-label{color:var(--ink3);}
+.depr-year-val{font-family:'DM Mono',monospace;font-weight:500;}
+.depr-year-pct{font-size:11px;color:var(--ink4);font-family:'DM Mono',monospace;}
+
+/* Loading states */
+.depr-loading{display:none;align-items:center;gap:12px;padding:1.5rem;color:var(--ink3);font-size:13px;}
+.depr-loading.active{display:flex;}
+.depr-loading-steps{display:flex;flex-direction:column;gap:4px;}
+.depr-loading-step{font-size:12px;color:var(--ink4);font-family:'DM Mono',monospace;opacity:0.4;transition:opacity 0.3s,color 0.3s;}
+.depr-loading-step.active{opacity:1;color:var(--purple);}
+.depr-loading-step.done{opacity:0.6;color:var(--green);}
+.spinner{width:18px;height:18px;border:2px solid var(--paper3);border-top-color:var(--purple);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.depr-narrative{display:none;background:var(--purple-pale);border:1px solid rgba(91,33,182,0.15);border-radius:var(--r);padding:1.25rem 1.5rem;font-size:13px;line-height:1.7;color:var(--ink2);margin-top:1rem;}
+.depr-narrative.active{display:block;}
+.depr-narrative h4{font-family:'DM Serif Display',serif;font-size:1rem;letter-spacing:-0.01em;margin-bottom:0.5rem;color:var(--purple);}
+.depr-narrative p{margin-bottom:0.5rem;}
+.depr-narrative p:last-child{margin-bottom:0;}
+
+/* Market data source box */
+.market-sources{background:var(--amber-pale);border:1px solid rgba(146,64,14,0.15);border-radius:var(--r);padding:1rem 1.25rem;font-size:12px;color:var(--amber);margin-bottom:1rem;display:none;}
+.market-sources.active{display:block;}
+.market-sources strong{font-weight:600;display:block;margin-bottom:4px;}
+.market-source-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
+.market-source-list li{font-family:'DM Mono',monospace;font-size:11px;opacity:0.8;}
+
+.depr-placeholder{padding:2rem;text-align:center;color:var(--ink4);font-size:13px;font-family:'DM Mono',monospace;}
+.depr-chart-wrap{margin-top:1rem;}
+.depr-chart-title{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;}
+.depr-chart-svg{width:100%;height:180px;display:block;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.vehicle-card,.global-controls,.results-section,.bar-section{animation:fadeUp 0.4s ease both;}
+.vehicle-card:nth-child(2){animation-delay:0.06s;}
+.results-section{animation-delay:0.12s;}
+.bar-section{animation-delay:0.18s;}
+footer{text-align:center;padding:2rem;font-size:12px;color:var(--ink4);font-family:'DM Mono',monospace;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vec<em>ient</em></div>
+  <div class="tagline">5-YEAR VEHICLE COST ANALYSER</div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Compare the true cost<br><em style="font-style:italic;color:var(--ink3)">of owning a vehicle</em></h1>
+    <p>Look up any UK vehicle by registration. AI searches live UK car listings to estimate real-world 5-year resale values based on projected end mileage.</p>
+  </div>
+
+  <!-- Config -->
+  <div class="api-notice" id="apiNotice">
+    <strong>⚙ DVLA Proxy (optional)</strong> — The DVLA API requires a server-side proxy due to CORS. Leave blank to enter details manually. The AI market search and depreciation analysis work without this.
+    <div class="api-key-row">
+      <input class="dvla-proxy-input" id="dvlaProxyUrl" type="url" placeholder="https://your-worker.workers.dev/dvla" />
+      <button class="api-key-save" onclick="saveConfig()">Save</button>
+    </div>
+  </div>
+
+  <!-- Global controls -->
+  <p class="section-label">Global Settings</p>
+  <div class="global-controls">
+    <div class="global-grid">
+      <div class="field-group">
+        <div class="field-label">Annual mileage <strong id="gMilesVal">10,000 mi</strong></div>
+        <input type="range" id="gMiles" min="1000" max="40000" step="500" value="10000">
+      </div>
+      <div class="field-group">
+        <div class="field-label">HP deposit % <strong id="gDepositVal">10%</strong></div>
+        <input type="range" id="gDeposit" min="0" max="50" step="1" value="10">
+      </div>
+      <div class="field-group">
+        <div class="field-label">HP interest rate (APR) <strong id="gAprVal">9.9%</strong></div>
+        <input type="range" id="gApr" min="1" max="30" step="0.1" value="9.9">
+      </div>
+    </div>
+  </div>
+
+  <!-- Vehicle cards -->
+  <p class="section-label">Vehicles</p>
+  <div class="vehicles">
+
+    <!-- Card A -->
+    <div class="vehicle-card card-a">
+      <div class="card-title">
+        <div class="card-dot"></div>
+        <input class="card-name" type="text" id="nameA" value="Vehicle A" placeholder="Vehicle name">
+      </div>
+
+      <div class="reg-lookup">
+        <div class="reg-input-row">
+          <input class="reg-input" type="text" id="regA" placeholder="AB12 CDE" maxlength="8" />
+          <button class="reg-btn" onclick="lookupReg('A')">🔍 Lookup</button>
+        </div>
+        <div id="dvlaResultA"></div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Current mileage <span id="endMileTagA" class="mileage-end-tag" style="display:none"></span></div>
+        <div class="mileage-input-wrap">
+          <input class="mileage-number" type="number" id="initMileA" value="0" min="0" max="300000" step="1000" placeholder="0">
+          <span class="mileage-suffix">miles</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Purchase price <strong id="priceAval">£20,000</strong></div>
+        <input type="range" id="priceA" min="1000" max="100000" step="500" value="20000">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <span>5-year resale value <span class="resale-auto-badge" id="resaleAutoA" style="display:none">✦ AI estimate</span></span>
+          <strong id="resaleAval">£8,000</strong>
+        </div>
+        <input type="range" id="resaleA" min="0" max="80000" step="500" value="8000">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div class="resale-source-note" id="resaleSourceA"></div>
+          <button class="market-btn" id="marketBtnA" onclick="fetchMarketResale('A')">
+            <div class="market-spinner"></div>
+            <span class="market-btn-text">🔎 Auto from market</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Average MPG <strong id="mpgAval">45 mpg</strong></div>
+        <input type="range" id="mpgA" min="10" max="300" step="1" value="45">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel type</div>
+        <div class="fuel-tabs" id="fuelTabsA">
+          <button class="ftab active" data-price="1.42">Petrol</button>
+          <button class="ftab" data-price="1.48">Diesel</button>
+          <button class="ftab" data-price="0.75">LPG</button>
+          <button class="ftab" data-price="0.28" data-electric="1">Electric</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel price <strong id="fpAval">£1.42/L</strong></div>
+        <input type="range" id="fpA" min="0.10" max="3.00" step="0.01" value="1.42">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Annual service / insurance / tax <strong id="fixedAval">£1,500</strong></div>
+        <input type="range" id="fixedA" min="0" max="8000" step="100" value="1500">
+      </div>
+    </div>
+
+    <!-- Card B -->
+    <div class="vehicle-card card-b">
+      <div class="card-title">
+        <div class="card-dot"></div>
+        <input class="card-name" type="text" id="nameB" value="Vehicle B" placeholder="Vehicle name">
+      </div>
+
+      <div class="reg-lookup">
+        <div class="reg-input-row">
+          <input class="reg-input" type="text" id="regB" placeholder="AB12 CDE" maxlength="8" />
+          <button class="reg-btn" onclick="lookupReg('B')">🔍 Lookup</button>
+        </div>
+        <div id="dvlaResultB"></div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Current mileage <span id="endMileTagB" class="mileage-end-tag" style="display:none"></span></div>
+        <div class="mileage-input-wrap">
+          <input class="mileage-number" type="number" id="initMileB" value="0" min="0" max="300000" step="1000" placeholder="0">
+          <span class="mileage-suffix">miles</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Purchase price <strong id="priceBval">£28,000</strong></div>
+        <input type="range" id="priceB" min="1000" max="100000" step="500" value="28000">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <span>5-year resale value <span class="resale-auto-badge" id="resaleAutoB" style="display:none">✦ AI estimate</span></span>
+          <strong id="resaleBval">£14,000</strong>
+        </div>
+        <input type="range" id="resaleB" min="0" max="80000" step="500" value="14000">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div class="resale-source-note" id="resaleSourceB"></div>
+          <button class="market-btn" id="marketBtnB" onclick="fetchMarketResale('B')">
+            <div class="market-spinner"></div>
+            <span class="market-btn-text">🔎 Auto from market</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Average MPG <strong id="mpgBval">55 mpg</strong></div>
+        <input type="range" id="mpgB" min="10" max="300" step="1" value="55">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel type</div>
+        <div class="fuel-tabs" id="fuelTabsB">
+          <button class="ftab" data-price="1.42">Petrol</button>
+          <button class="ftab active" data-price="1.48">Diesel</button>
+          <button class="ftab" data-price="0.75">LPG</button>
+          <button class="ftab" data-price="0.28" data-electric="1">Electric</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel price <strong id="fpBval">£1.48/L</strong></div>
+        <input type="range" id="fpB" min="0.10" max="3.00" step="0.01" value="1.48">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Annual service / insurance / tax <strong id="fixedBval">£1,800</strong></div>
+        <input type="range" id="fixedB" min="0" max="8000" step="100" value="1800">
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <p class="section-label">5-Year Cost Breakdown</p>
+  <div class="results-section">
+    <div class="results-header">
+      <h2>Total Cost of Ownership</h2>
+      <span>OVER 5 YEARS</span>
+    </div>
+    <div class="results-grid">
+      <div class="result-col col-a">
+        <div class="result-name" id="labelA">Vehicle A</div>
+        <div class="stat-row"><span class="label">Purchase price</span><span class="val" id="rA_price">—</span></div>
+        <div class="stat-row"><span class="label">HP interest (5yr)</span><span class="val" id="rA_interest">—</span></div>
+        <div class="stat-row"><span class="label">Fuel (5yr total)</span><span class="val" id="rA_fuel">—</span></div>
+        <div class="stat-row"><span class="label">Service/ins/tax (5yr)</span><span class="val" id="rA_fixed">—</span></div>
+        <div class="stat-row"><span class="label">Resale value</span><span class="val" id="rA_resale">—</span></div>
+        <div class="stat-row total-row"><span class="label">Net 5-year cost</span><span class="val" id="rA_total">—</span></div>
+        <div style="height:1rem;"></div>
+        <div class="stat-row"><span class="label">Per year</span><span class="val" id="rA_yr">—</span></div>
+        <div class="stat-row"><span class="label">Per month</span><span class="val" id="rA_mo">—</span></div>
+        <div class="stat-row"><span class="label">Per week</span><span class="val" id="rA_wk">—</span></div>
+        <div class="stat-row"><span class="label">Per day</span><span class="val" id="rA_dy">—</span></div>
+        <div style="height:0.5rem;"></div>
+        <div class="stat-row"><span class="label">Fuel cost / year</span><span class="val" id="rA_fuelyr">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / month</span><span class="val" id="rA_fuelmo">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / week</span><span class="val" id="rA_fuelwk">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / day</span><span class="val" id="rA_fueldy">—</span></div>
+      </div>
+      <div class="result-col col-b">
+        <div class="result-name" id="labelB">Vehicle B</div>
+        <div class="stat-row"><span class="label">Purchase price</span><span class="val" id="rB_price">—</span></div>
+        <div class="stat-row"><span class="label">HP interest (5yr)</span><span class="val" id="rB_interest">—</span></div>
+        <div class="stat-row"><span class="label">Fuel (5yr total)</span><span class="val" id="rB_fuel">—</span></div>
+        <div class="stat-row"><span class="label">Service/ins/tax (5yr)</span><span class="val" id="rB_fixed">—</span></div>
+        <div class="stat-row"><span class="label">Resale value</span><span class="val" id="rB_resale">—</span></div>
+        <div class="stat-row total-row"><span class="label">Net 5-year cost</span><span class="val" id="rB_total">—</span></div>
+        <div style="height:1rem;"></div>
+        <div class="stat-row"><span class="label">Per year</span><span class="val" id="rB_yr">—</span></div>
+        <div class="stat-row"><span class="label">Per month</span><span class="val" id="rB_mo">—</span></div>
+        <div class="stat-row"><span class="label">Per week</span><span class="val" id="rB_wk">—</span></div>
+        <div class="stat-row"><span class="label">Per day</span><span class="val" id="rB_dy">—</span></div>
+        <div style="height:0.5rem;"></div>
+        <div class="stat-row"><span class="label">Fuel cost / year</span><span class="val" id="rB_fuelyr">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / month</span><span class="val" id="rB_fuelmo">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / week</span><span class="val" id="rB_fuelwk">—</span></div>
+        <div class="stat-row"><span class="label">Fuel cost / day</span><span class="val" id="rB_fueldy">—</span></div>
+      </div>
+    </div>
+    <div class="verdict" id="verdictBanner">
+      <div class="verdict-badge neutral" id="verdictBadge">–</div>
+      <div class="verdict-text" id="verdictText">Adjust the values above to compare.</div>
+    </div>
+  </div>
+
+  <!-- Bar chart -->
+  <p class="section-label">Cost Comparison</p>
+  <div class="bar-section">
+    <div class="bar-chart" id="barChart"></div>
+  </div>
+
+  <!-- Year by year table -->
+  <p class="section-label">Year-by-Year Fuel Cost</p>
+  <div class="results-section">
+    <div class="year-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th>Cumulative miles</th>
+            <th id="thA">Vehicle A fuel</th>
+            <th id="thB">Vehicle B fuel</th>
+            <th>Cheaper</th>
+            <th>Saving</th>
+          </tr>
+        </thead>
+        <tbody id="yearBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Depreciation panel -->
+  <p class="section-label">AI Depreciation Analysis</p>
+  <div class="depr-panel">
+    <div class="depr-header">
+      <div>
+        <h2>Depreciation Forecast</h2>
+        <p>CLAUDE · WEB SEARCH · LIVE UK MARKET DATA · 5-YEAR ESTIMATE</p>
+      </div>
+      <button class="depr-analyse-btn" id="deprBtn" onclick="runDepreciationAnalysis()">
+        <span>✦</span> Analyse Depreciation
+      </button>
+    </div>
+
+    <div class="depr-body">
+      <div class="depr-loading" id="deprLoading">
+        <div class="spinner"></div>
+        <div class="depr-loading-steps">
+          <div class="depr-loading-step" id="step1">① Searching UK car listings for Vehicle A…</div>
+          <div class="depr-loading-step" id="step2">② Searching UK car listings for Vehicle B…</div>
+          <div class="depr-loading-step" id="step3">③ Averaging market prices at end mileage…</div>
+          <div class="depr-loading-step" id="step4">④ Generating year-by-year depreciation curves…</div>
+        </div>
+      </div>
+
+      <div id="deprContent">
+        <div class="depr-placeholder" id="deprPlaceholder">Enter vehicle details and click "Analyse Depreciation" — Claude will search live UK car listings to estimate realistic resale values.</div>
+
+        <div id="deprResults" style="display:none;">
+          <div class="market-sources" id="marketSourcesBox">
+            <strong>📊 Market data sources used</strong>
+            <ul class="market-source-list" id="marketSourceList"></ul>
+          </div>
+
+          <div class="depr-cols">
+            <div>
+              <div class="depr-col-head a" id="deprHeadA">Vehicle A</div>
+              <div id="deprRowsA"></div>
+            </div>
+            <div>
+              <div class="depr-col-head b" id="deprHeadB">Vehicle B</div>
+              <div id="deprRowsB"></div>
+            </div>
+          </div>
+
+          <div class="depr-chart-wrap">
+            <div class="depr-chart-title">Estimated value over time (£)</div>
+            <svg class="depr-chart-svg" id="deprSvg" viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+
+          <div class="depr-narrative" id="deprNarrative">
+            <h4>Analysis</h4>
+            <div id="deprNarrativeText"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+<footer>Vecient — for illustration purposes only. AI resale estimates are based on live UK market data searches and are not financial advice.</footer>
+
+<script>
+/* ── Config ── */
+let DVLA_PROXY_URL = localStorage.getItem('dvla_proxy_url') || '';
+if(DVLA_PROXY_URL) document.getElementById('dvlaProxyUrl').value = DVLA_PROXY_URL;
+
+function saveConfig(){
+  DVLA_PROXY_URL = document.getElementById('dvlaProxyUrl').value.trim();
+  localStorage.setItem('dvla_proxy_url', DVLA_PROXY_URL);
+  const n = document.getElementById('apiNotice');
+  n.style.background='var(--green-pale)'; n.style.borderColor='rgba(26,102,68,0.2)'; n.style.color='var(--green)';
+  n.innerHTML='<strong>✓ Saved</strong> — DVLA proxy URL configured.';
+}
+
+/* ── State ── */
+const L_PER_GAL = 4.54609;
+const state = {
+  miles: 10000,
+  deposit: 10,
+  apr: 9.9,
+  a:{ name:'Vehicle A', price:20000, resale:8000, mpg:45, fp:1.42, fixed:1500, electric:false, dvla:null, initMile:0 },
+  b:{ name:'Vehicle B', price:28000, resale:14000, mpg:55, fp:1.48, fixed:1800, electric:false, dvla:null, initMile:0 }
+};
+
+function endMileage(key){
+  return state[key].initMile + state.miles * 5;
+}
+
+function updateEndMileTag(suffix){
+  const key = suffix.toLowerCase();
+  const tag = document.getElementById('endMileTag'+suffix);
+  const end = endMileage(key);
+  tag.textContent = '→ '+end.toLocaleString()+' mi at year 5';
+  tag.style.display = 'inline-flex';
+}
+
+/* ── DVLA Lookup ── */
+async function lookupReg(suffix){
+  const regInput = document.getElementById('reg'+suffix);
+  const resultDiv = document.getElementById('dvlaResult'+suffix);
+  const btn = regInput.parentElement.querySelector('.reg-btn');
+  const reg = regInput.value.replace(/\s/g,'').toUpperCase();
+  if(!reg){ showDvlaResult(resultDiv,'error','Please enter a registration number.'); return; }
+  if(!DVLA_PROXY_URL){ showDvlaResult(resultDiv,'info','No DVLA proxy configured — enter details manually or add your proxy URL above.'); return; }
+  btn.disabled=true; btn.textContent='Looking up…'; resultDiv.innerHTML='';
+  try{
+    const res = await fetch(DVLA_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registrationNumber:reg})});
+    if(!res.ok) throw new Error(res.status===404?'Vehicle not found.':'DVLA API error ('+res.status+')');
+    const data = await res.json();
+    applyDvlaData(suffix.toLowerCase(), data);
+    renderDvlaSuccess(resultDiv, data);
+  }catch(e){ showDvlaResult(resultDiv,'error',e.message||'Lookup failed.'); }
+  finally{ btn.disabled=false; btn.textContent='🔍 Lookup'; }
+}
+
+function applyDvlaData(key, data){
+  const s = state[key];
+  s.dvla = data;
+  const parts = [data.make, data.colour, data.yearOfManufacture].filter(Boolean);
+  s.name = parts.join(' ') || s.name;
+  const suffix = key.toUpperCase();
+  document.getElementById('name'+suffix).value = s.name;
+  const fuel = (data.fuelType||'').toLowerCase();
+  let fp=1.42, electric=false;
+  if(fuel.includes('diesel')){fp=1.48;}
+  else if(fuel.includes('electric')){fp=0.28;electric=true;}
+  else if(fuel.includes('gas')||fuel.includes('lpg')){fp=0.75;}
+  s.fp=fp; s.electric=electric;
+  document.querySelectorAll('#fuelTabs'+suffix+' .ftab').forEach(btn=>{
+    btn.classList.remove('active');
+    if(!!btn.dataset.electric===electric && Math.abs(parseFloat(btn.dataset.price)-fp)<0.01) btn.classList.add('active');
+  });
+  document.getElementById('fp'+suffix).value=fp;
+  document.getElementById('fp'+suffix+'val').textContent='£'+fp.toFixed(2)+(electric?'/kWh':'/L');
+  updateEndMileTag(suffix);
+  calc();
+}
+
+function renderDvlaSuccess(div, data){
+  const badges=[data.make,data.colour,data.fuelType,
+    data.yearOfManufacture?'Year: '+data.yearOfManufacture:null,
+    data.engineCapacity?data.engineCapacity+'cc':null,
+    data.co2Emissions?'CO₂: '+data.co2Emissions+'g/km':null,
+    data.taxStatus||null,
+    data.motStatus?'MOT: '+data.motStatus:null
+  ].filter(Boolean);
+  div.innerHTML=`<div class="dvla-result success"><strong>✓ ${data.registrationNumber||''}</strong> — data loaded
+    <div class="dvla-badges">${badges.map(b=>`<span class="dvla-badge">${b}</span>`).join('')}</div></div>`;
+}
+function showDvlaResult(div,type,msg){ div.innerHTML=`<div class="dvla-result ${type}">${msg}</div>`; }
+
+/* ── Market resale fetch (single vehicle) ── */
+async function fetchMarketResale(suffix){
+  const key = suffix.toLowerCase();
+  const s = state[key];
+  const btn = document.getElementById('marketBtn'+suffix);
+  const sourceNote = document.getElementById('resaleSource'+suffix);
+  const badge = document.getElementById('resaleAuto'+suffix);
+
+  btn.classList.add('loading'); btn.disabled=true;
+  sourceNote.textContent='Searching UK listings…';
+
+  const endMile = endMileage(key);
+  const vehicleDesc = buildVehicleDesc(s);
+  const year = s.dvla?.yearOfManufacture || '';
+  const endYear = year ? parseInt(year)+5 : '';
+
+  const prompt = buildMarketSearchPrompt(vehicleDesc, endMile, endYear, s.price);
+
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:800,
+        tools:[{type:"web_search_20250305",name:"web_search"}],
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const result = parseMarketResult(data);
+    if(result){
+      const clampedVal = Math.min(result.estimatedResale, s.price * 0.95);
+      const slider = document.getElementById('resale'+suffix);
+      slider.value = clampedVal;
+      document.getElementById('resale'+suffix+'val').textContent = fmt(clampedVal);
+      state[key].resale = clampedVal;
+      badge.style.display='inline-flex';
+      sourceNote.textContent = result.sourceNote || 'Based on '+result.listingsFound+' similar listings';
+      calc();
+    } else {
+      sourceNote.textContent='Could not find market data — set manually.';
+    }
+  }catch(e){
+    sourceNote.textContent='Search failed: '+e.message;
+  }finally{
+    btn.classList.remove('loading'); btn.disabled=false;
+  }
+}
+
+function buildVehicleDesc(s){
+  if(s.dvla){
+    return [s.dvla.make, s.dvla.yearOfManufacture, s.dvla.engineCapacity ? s.dvla.engineCapacity+'cc' : '', s.dvla.fuelType].filter(Boolean).join(' ');
+  }
+  const fuelLabel = s.electric ? 'electric' : s.fp===1.48 ? 'diesel' : s.fp===0.75 ? 'LPG' : 'petrol';
+  return s.name + ' ' + fuelLabel;
+}
+
+function buildMarketSearchPrompt(vehicleDesc, endMile, endYear, purchasePrice){
+  const mileK = Math.round(endMile/1000);
+  return `You are a UK used car market analyst. Search for current UK used car listings for a "${vehicleDesc}" with approximately ${mileK}000 miles on the clock${endYear?' (this would be a '+endYear+' model by then)':''}.
+
+Search AutoTrader UK, eBay Motors UK, Motors.co.uk, CarGurus UK, or similar for current asking prices of similar used examples at around ${endMile.toLocaleString()} miles.
+
+Find at least 3-5 similar listings if possible and calculate the average/typical private sale price (not dealer price). The purchase price today is £${purchasePrice.toLocaleString()} — the resale estimate must be LOWER than this.
+
+Respond ONLY with a JSON object:
+{
+  "estimatedResale": <integer — average market value in GBP, must be less than ${purchasePrice}>,
+  "listingsFound": <number of listings found>,
+  "priceRange": "<e.g. £4,500–£7,200>",
+  "sourceNote": "<one line: e.g. 'Avg of 4 AutoTrader listings at ~85,000 miles'>",
+  "sources": ["<url1>","<url2>"]
+}`;
+}
+
+function parseMarketResult(data){
+  try{
+    const text = data.content.map(i=>i.text||'').join('');
+    const clean = text.replace(/```json|```/g,'').trim();
+    const j = JSON.parse(clean);
+    if(j.estimatedResale && j.estimatedResale > 0) return j;
+  }catch(e){}
+  return null;
+}
+
+/* ── Cost Calculations ── */
+function fmt(n){ return '£'+Math.round(n).toLocaleString('en-GB'); }
+function fmtD(n){ return '£'+n.toFixed(2); }
+
+function calcFuelPerYear(v){
+  if(v.electric){ const mpkwh=v.mpg/3.41; return (state.miles/mpkwh)*v.fp; }
+  return (state.miles/v.mpg)*L_PER_GAL*v.fp;
+}
+
+function calcHP(price,depositPct,apr){
+  const deposit=price*depositPct/100, loan=price-deposit;
+  const mr=apr/100/12, n=60;
+  const mp=mr===0?loan/n:loan*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1);
+  return{totalInterest:mp*n+deposit-price, monthlyPayment:mp};
+}
+
+function calc(){
+  const{miles,deposit,apr,a,b}=state;
+  const fuelA=calcFuelPerYear(a)*5, fuelB=calcFuelPerYear(b)*5;
+  const hpA=calcHP(a.price,deposit,apr), hpB=calcHP(b.price,deposit,apr);
+  const fxA=a.fixed*5, fxB=b.fixed*5;
+  const totA=a.price+hpA.totalInterest+fuelA+fxA-a.resale;
+  const totB=b.price+hpB.totalInterest+fuelB+fxB-b.resale;
+
+  function setStats(p,v,hp,fuel5,fx5,tot){
+    document.getElementById(p+'_price').textContent=fmt(v.price);
+    document.getElementById(p+'_interest').textContent=fmt(hp.totalInterest);
+    document.getElementById(p+'_fuel').textContent=fmt(fuel5);
+    document.getElementById(p+'_fixed').textContent=fmt(fx5);
+    document.getElementById(p+'_resale').textContent='−'+fmt(v.resale);
+    document.getElementById(p+'_total').textContent=fmt(tot);
+    document.getElementById(p+'_yr').textContent=fmt(tot/5);
+    document.getElementById(p+'_mo').textContent=fmtD(tot/60);
+    document.getElementById(p+'_wk').textContent=fmtD(tot/260);
+    document.getElementById(p+'_dy').textContent=fmtD(tot/1825);
+    const fa=fuel5/5;
+    document.getElementById(p+'_fuelyr').textContent=fmt(fa);
+    document.getElementById(p+'_fuelmo').textContent=fmtD(fa/12);
+    document.getElementById(p+'_fuelwk').textContent=fmtD(fa/52);
+    document.getElementById(p+'_fueldy').textContent=fmtD(fa/365);
+  }
+  setStats('rA',a,hpA,fuelA,fxA,totA);
+  setStats('rB',b,hpB,fuelB,fxB,totB);
+  document.getElementById('labelA').textContent=a.name;
+  document.getElementById('labelB').textContent=b.name;
+
+  const badge=document.getElementById('verdictBadge'), txt=document.getElementById('verdictText');
+  const diff=Math.abs(totA-totB);
+  if(diff<100){badge.className='verdict-badge neutral';badge.textContent='NEAR TIE';txt.innerHTML='Both vehicles cost almost the same over 5 years.';}
+  else if(totA<totB){badge.className='verdict-badge';badge.style.background='';badge.style.color='';badge.textContent=a.name+' WINS';txt.innerHTML=`<span class="verdict-saving">${fmt(diff)} cheaper</span> than ${b.name} over 5 years — ${fmtD(diff/60)}/month less.`;}
+  else{badge.className='verdict-badge';badge.style.background='var(--blue-pale)';badge.style.color='var(--blue)';badge.textContent=b.name+' WINS';txt.innerHTML=`<span class="verdict-saving" style="color:var(--blue)">${fmt(diff)} cheaper</span> than ${a.name} over 5 years — ${fmtD(diff/60)}/month less.`;}
+
+  const bars=[
+    {label:'Purchase price',va:a.price,vb:b.price},
+    {label:'HP interest',va:hpA.totalInterest,vb:hpB.totalInterest},
+    {label:'Fuel (5yr)',va:fuelA,vb:fuelB},
+    {label:'Running costs',va:fxA,vb:fxB},
+    {label:'Resale (saved)',va:a.resale,vb:b.resale},
+    {label:'Net total',va:totA,vb:totB}
+  ];
+  const maxV=Math.max(...bars.map(r=>Math.max(r.va,r.vb)));
+  document.getElementById('barChart').innerHTML=bars.map(row=>{
+    const pA=(row.va/maxV*100).toFixed(1), pB=(row.vb/maxV*100).toFixed(1);
+    return`<div style="margin-bottom:6px;">
+      <div style="font-size:11px;color:var(--ink3);margin-bottom:4px;font-family:'DM Mono',monospace;letter-spacing:0.04em;">${row.label.toUpperCase()}</div>
+      <div class="bar-row"><div style="font-size:12px;color:var(--accent);font-weight:500;text-align:right;font-family:'DM Mono',monospace;width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.name}</div><div class="bar-track"><div class="bar-fill a" style="width:${pA}%"></div></div><div class="bar-val">${fmt(row.va)}</div></div>
+      <div class="bar-row"><div style="font-size:12px;color:var(--blue);font-weight:500;text-align:right;font-family:'DM Mono',monospace;width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name}</div><div class="bar-track"><div class="bar-fill b" style="width:${pB}%"></div></div><div class="bar-val">${fmt(row.vb)}</div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('thA').textContent=a.name+' fuel';
+  document.getElementById('thB').textContent=b.name+' fuel';
+  let rows='';
+  for(let yr=1;yr<=5;yr++){
+    const fa=calcFuelPerYear(a), fb=calcFuelPerYear(b);
+    const cumA=state.a.initMile+miles*yr, cumB=state.b.initMile+miles*yr;
+    const winA=fa<fb, save=Math.abs(fa-fb);
+    rows+=`<tr class="${winA?'winner-a':'winner-b'}">
+      <td>Year ${yr}</td>
+      <td class="mono">${cumA.toLocaleString()} / ${cumB.toLocaleString()} mi</td>
+      <td class="mono">${fmt(fa*yr)}</td>
+      <td class="mono">${fmt(fb*yr)}</td>
+      <td><span class="pill ${winA?'pill-a':'pill-b'}">${winA?a.name:b.name}</span></td>
+      <td class="mono">${fmt(save*yr)}</td>
+    </tr>`;
+  }
+  document.getElementById('yearBody').innerHTML=rows;
+}
+
+/* ── Full Depreciation Analysis (both vehicles, web search) ── */
+async function runDepreciationAnalysis(){
+  const btn=document.getElementById('deprBtn');
+  const loading=document.getElementById('deprLoading');
+  const placeholder=document.getElementById('deprPlaceholder');
+  const results=document.getElementById('deprResults');
+  const narrative=document.getElementById('deprNarrative');
+
+  btn.disabled=true;
+  loading.classList.add('active');
+  if(placeholder) placeholder.style.display='none';
+  results.style.display='none';
+  narrative.classList.remove('active');
+
+  // Reset step indicators
+  ['step1','step2','step3','step4'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('active','done');
+  });
+
+  const setStep=(n)=>{
+    for(let i=1;i<n;i++) document.getElementById('step'+i).classList.add('done');
+    document.getElementById('step'+n).classList.add('active');
+  };
+
+  const{a,b}=state;
+  const endMileA=endMileage('a'), endMileB=endMileage('b');
+
+  try{
+    setStep(1);
+    const descA=buildVehicleDesc(a);
+    const yearA=a.dvla?.yearOfManufacture||'';
+    const promptA=buildMarketSearchPrompt(descA, endMileA, yearA?parseInt(yearA)+5:'', a.price);
+
+    setStep(2);
+    const descB=buildVehicleDesc(b);
+    const yearB=b.dvla?.yearOfManufacture||'';
+    const promptB=buildMarketSearchPrompt(descB, endMileB, yearB?parseInt(yearB)+5:'', b.price);
+
+    // Run both searches in parallel
+    const [resA, resB] = await Promise.all([
+      fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:promptA}]})}),
+      fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:promptB}]})})
+    ]);
+
+    setStep(3);
+    const [dataA, dataB] = await Promise.all([resA.json(), resB.json()]);
+    const marketA = parseMarketResult(dataA) || {estimatedResale: Math.round(a.price*0.55), listingsFound:0, sourceNote:'Estimated — no listings found', priceRange:'N/A', sources:[]};
+    const marketB = parseMarketResult(dataB) || {estimatedResale: Math.round(b.price*0.55), listingsFound:0, sourceNote:'Estimated — no listings found', priceRange:'N/A', sources:[]};
+
+    setStep(4);
+    // Now ask Claude to generate year-by-year curves using these anchors
+    const curvePrompt = buildCurvePrompt(a, b, endMileA, endMileB, marketA, marketB);
+    const curveRes = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:curvePrompt}]})
+    });
+    const curveData = await curveRes.json();
+    const rawText = curveData.content.map(i=>i.text||'').join('');
+    const clean = rawText.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    // Update resale sliders from live market data
+    const yr5A=marketA.estimatedResale, yr5B=marketB.estimatedResale;
+    if(yr5A>0){ document.getElementById('resaleA').value=yr5A; document.getElementById('resaleAval').textContent=fmt(yr5A); state.a.resale=yr5A; document.getElementById('resaleAutoA').style.display='inline-flex'; document.getElementById('resaleSourceA').textContent=marketA.sourceNote||''; }
+    if(yr5B>0){ document.getElementById('resaleB').value=yr5B; document.getElementById('resaleBval').textContent=fmt(yr5B); state.b.resale=yr5B; document.getElementById('resaleAutoB').style.display='inline-flex'; document.getElementById('resaleSourceB').textContent=marketB.sourceNote||''; }
+    calc();
+
+    // Show sources
+    const allSources=[...(marketA.sources||[]),...(marketB.sources||[])].filter(Boolean);
+    if(allSources.length){
+      const box=document.getElementById('marketSourcesBox');
+      box.classList.add('active');
+      document.getElementById('marketSourceList').innerHTML=allSources.slice(0,6).map(s=>{
+        try{ return `<li>· ${new URL(s).hostname}</li>`; }catch(e){ return `<li>· ${s.substring(0,60)}</li>`; }
+      }).join('');
+    }
+
+    renderDepreciation(parsed, marketA, marketB);
+
+  }catch(e){
+    document.getElementById('deprNarrativeText').innerHTML=`<span style="color:var(--accent)">Analysis failed: ${e.message}</span>`;
+    results.style.display='block';
+    narrative.classList.add('active');
+  }finally{
+    loading.classList.remove('active');
+    btn.disabled=false;
+  }
+}
+
+function buildCurvePrompt(a, b, endMileA, endMileB, marketA, marketB){
+  return `You are a UK automotive depreciation expert. Based on real market data already retrieved, generate year-by-year depreciation curves.
+
+VEHICLE A: ${buildVehicleDesc(a)}
+- Purchase price: £${a.price.toLocaleString()}
+- Current mileage: ${a.initMile.toLocaleString()} miles
+- Projected year-5 mileage: ${endMileA.toLocaleString()} miles
+- Year-5 market value from live listings: £${marketA.estimatedResale.toLocaleString()} (${marketA.priceRange||'range unknown'}, ${marketA.listingsFound||0} listings)
+
+VEHICLE B: ${buildVehicleDesc(b)}
+- Purchase price: £${b.price.toLocaleString()}
+- Current mileage: ${b.initMile.toLocaleString()} miles
+- Projected year-5 mileage: ${endMileB.toLocaleString()} miles
+- Year-5 market value from live listings: £${marketB.estimatedResale.toLocaleString()} (${marketB.priceRange||'range unknown'}, ${marketB.listingsFound||0} listings)
+
+Using these year-5 anchors, interpolate realistic intermediate year values (year 1–4) using typical UK depreciation patterns for these vehicle types (e.g. steeper drop in year 1, flattening later).
+
+Respond ONLY with JSON, no markdown:
+{
+  "vehicleA":{"year0":${a.price},"year1":<int>,"year2":<int>,"year3":<int>,"year4":<int>,"year5":${marketA.estimatedResale}},
+  "vehicleB":{"year0":${b.price},"year1":<int>,"year2":<int>,"year3":<int>,"year4":<int>,"year5":${marketB.estimatedResale}},
+  "narrative":"<3-4 sentences comparing depreciation of both vehicles using the actual market data found. Mention specific prices, ranges, and which vehicle holds value better in the UK market. Plain text.>"
+}`;
+}
+
+function renderDepreciation(data, marketA, marketB){
+  const{vehicleA,vehicleB,narrative}=data;
+  const{a,b}=state;
+  document.getElementById('deprHeadA').textContent=a.name;
+  document.getElementById('deprHeadB').textContent=b.name;
+
+  function renderRows(elId,vData,startPrice){
+    const el=document.getElementById(elId);
+    let html='';
+    for(let yr=0;yr<=5;yr++){
+      const val=vData['year'+yr];
+      const pct=Math.round((val/startPrice)*100);
+      const lost=startPrice-val;
+      html+=`<div class="depr-year-row">
+        <span class="depr-year-label">${yr===0?'Now':'Year '+yr}</span>
+        <span>
+          <span class="depr-year-val">${fmt(val)}</span>
+          <span class="depr-year-pct" style="margin-left:6px;">${yr===0?'100% of purchase':'−'+fmt(lost)+' ('+pct+'%)'}</span>
+        </span>
+      </div>`;
+    }
+    el.innerHTML=html;
+  }
+  renderRows('deprRowsA',vehicleA,vehicleA.year0);
+  renderRows('deprRowsB',vehicleB,vehicleB.year0);
+
+  document.getElementById('deprNarrativeText').innerHTML=narrative.split('\n').filter(Boolean).map(p=>`<p>${p}</p>`).join('');
+  drawDeprChart(vehicleA,vehicleB);
+  document.getElementById('deprResults').style.display='block';
+  document.getElementById('deprNarrative').classList.add('active');
+}
+
+function drawDeprChart(va,vb){
+  const svg=document.getElementById('deprSvg');
+  const W=700,H=180,padL=70,padR=20,padT=15,padB=35;
+  const cW=W-padL-padR, cH=H-padT-padB;
+  const allVals=[0,1,2,3,4,5].flatMap(y=>[va['year'+y],vb['year'+y]]);
+  const minV=Math.min(...allVals)*0.95, maxV=Math.max(...allVals)*1.02;
+  const xPos=yr=>padL+(yr/5)*cW;
+  const yPos=v=>padT+cH-((v-minV)/(maxV-minV))*cH;
+  const pathA=[0,1,2,3,4,5].map(y=>`${xPos(y).toFixed(1)},${yPos(va['year'+y]).toFixed(1)}`).join(' L ');
+  const pathB=[0,1,2,3,4,5].map(y=>`${xPos(y).toFixed(1)},${yPos(vb['year'+y]).toFixed(1)}`).join(' L ');
+  let yLabels='';
+  for(let i=0;i<=4;i++){
+    const v=minV+(i/4)*(maxV-minV), y=yPos(v);
+    yLabels+=`<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="10" font-family="DM Mono,monospace" fill="#7a7a72">£${Math.round(v/1000)}k</text><line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#e4e2dc" stroke-width="1"/>`;
+  }
+  let xLabels='';
+  for(let yr=0;yr<=5;yr++) xLabels+=`<text x="${xPos(yr)}" y="${H-padB+18}" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="#7a7a72">${yr===0?'Now':'Yr '+yr}</text>`;
+  const dots=(vd,c)=>[0,1,2,3,4,5].map(y=>`<circle cx="${xPos(y)}" cy="${yPos(vd['year'+y])}" r="4" fill="${c}" stroke="white" stroke-width="1.5"/>`).join('');
+  svg.innerHTML=`${yLabels}${xLabels}
+    <path d="M ${pathA}" fill="none" stroke="#c8401a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M ${pathB}" fill="none" stroke="#1a4580" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots(va,'#c8401a')}${dots(vb,'#1a4580')}
+    <circle cx="12" cy="12" r="5" fill="#c8401a"/>
+    <text x="22" y="16" font-size="11" font-family="Outfit,sans-serif" fill="#3a3a36">${state.a.name}</text>
+    <circle cx="130" cy="12" r="5" fill="#1a4580"/>
+    <text x="142" y="16" font-size="11" font-family="Outfit,sans-serif" fill="#3a3a36">${state.b.name}</text>`;
+}
+
+/* ── Wire up controls ── */
+document.getElementById('gMiles').addEventListener('input',e=>{
+  state.miles=parseInt(e.target.value);
+  document.getElementById('gMilesVal').textContent=parseInt(e.target.value).toLocaleString()+' mi';
+  updateEndMileTag('A'); updateEndMileTag('B');
+  calc();
+});
+document.getElementById('gDeposit').addEventListener('input',e=>{ state.deposit=parseFloat(e.target.value); document.getElementById('gDepositVal').textContent=e.target.value+'%'; calc(); });
+document.getElementById('gApr').addEventListener('input',e=>{ state.apr=parseFloat(e.target.value); document.getElementById('gAprVal').textContent=parseFloat(e.target.value).toFixed(1)+'%'; calc(); });
+
+function wireVehicle(suffix,stateKey){
+  const s=state[stateKey];
+
+  document.getElementById('name'+suffix).addEventListener('input',e=>{ s.name=e.target.value||('Vehicle '+suffix); calc(); });
+
+  document.getElementById('initMile'+suffix).addEventListener('input',e=>{
+    s.initMile=parseInt(e.target.value)||0;
+    updateEndMileTag(suffix);
+    calc();
+  });
+
+  ['price','resale','mpg','fp','fixed'].forEach(field=>{
+    document.getElementById(field+suffix).addEventListener('input',e=>{
+      const v=parseFloat(e.target.value); s[field]=v;
+      const m={price:()=>fmt(v),resale:()=>fmt(v),mpg:()=>v+(s.electric?' MPGe':' mpg'),fp:()=>'£'+v.toFixed(2)+(s.electric?'/kWh':'/L'),fixed:()=>fmt(v)};
+      document.getElementById(field+suffix+'val').textContent=m[field]();
+      if(field==='resale'){ document.getElementById('resaleAuto'+suffix).style.display='none'; document.getElementById('resaleSource'+suffix).textContent=''; }
+      calc();
+    });
+  });
+
+  document.querySelectorAll('#fuelTabs'+suffix+' .ftab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('#fuelTabs'+suffix+' .ftab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      s.electric=!!btn.dataset.electric; s.fp=parseFloat(btn.dataset.price);
+      document.getElementById('fp'+suffix).value=s.fp;
+      document.getElementById('fp'+suffix+'val').textContent='£'+s.fp.toFixed(2)+(s.electric?'/kWh':'/L');
+      const sl=document.getElementById('mpg'+suffix);
+      if(s.electric){sl.max=300;if(s.mpg<50){s.mpg=100;sl.value=100;}}
+      else{sl.max=150;if(s.mpg>150){s.mpg=50;sl.value=50;}}
+      document.getElementById('mpg'+suffix+'val').textContent=s.mpg+(s.electric?' MPGe':' mpg');
+      calc();
+    });
+  });
+}
+
+wireVehicle('A','a');
+wireVehicle('B','b');
+calc();
+</script>
+</body>
+</html>
